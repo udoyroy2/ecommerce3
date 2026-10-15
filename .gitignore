@@ -25,3 +25,9 @@ dist-ssr
 .env
 .env.local
 .env.*.local
+venv/
+__pycache__/
+*.pyc
+.env
+node_modules/
+dist/

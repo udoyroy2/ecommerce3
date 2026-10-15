@@ -1,6 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import products from "../data/product";
 import {
   Package,
   ShoppingCart,
@@ -12,6 +11,16 @@ import {
 } from "lucide-react";
 
 const Adminpage = () => {
+
+
+
+const [product,setProduct] = useState([]);
+const [loading,setLoading] = useState(false);
+const [message, setMessage] = useState("");
+const [productList, setProductList] = useState([]);
+
+
+
 
   const [form, setForm] = useState({
     name: "",
@@ -28,6 +37,34 @@ const Adminpage = () => {
 
   });
 
+useEffect (() =>{
+  fetchproduct();
+},[]);
+
+
+
+
+const fetchproduct = async () => {
+  try{
+    const response = await fetch(apiurl);
+
+    if  (!response.ok){
+      throw new Error("Failed to fetch products");
+
+    }
+    const data = await response.json();
+    setProduct(data);
+
+  }catch(error){
+    console.error("Fetch products error",error);
+    setMessage("Cloud not load product . Check your data base");
+  }
+};
+
+
+
+
+
   const handleChange = (e) => {
     setForm({
       ...form,
@@ -36,9 +73,83 @@ const Adminpage = () => {
     });
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log(form);
+const apiurl = "http://127.0.0.1:8000/api/products/";
+
+
+
+  const handleSubmit = async (e) => {
+
+e.preventDefault();
+
+setLoading(true);
+setMessage("");
+
+
+
+const productData ={
+  name: form.name.trim(),
+  description: form.description,
+  price:Number(form.price),
+  old_price:form.oldprice
+  ? Number(form.oldprice)
+  : null,
+  category: form.category,
+  sub_category: form.subCategory || null,
+  brand: form.brand || null,
+  sizes:form.sizes || null,
+  colour: form.colour || null,
+  stock: Number(form.stock || 0),
+  image: form.image || null,
+};
+
+try {
+  const response = await fetch(apiurl,{
+    method:"POST",
+    headers:{
+      "Content-Type": "application/json",
+    },
+    body:JSON.stringify(productData),
+  });
+
+  const data = await response.json();
+
+  console.log("POST S:",response.status);
+  console.log("POST Res",data)
+
+  if (!response.ok){
+    throw new Error(
+ JSON.stringify(data)
+    );
+  }
+
+  setMessage("Product added successfully!");
+await fetchproduct();
+
+
+  setForm({
+    name:"",
+    description:"",
+    price:"",
+    oldprice:"",
+    category:"",
+    subCategory:"",
+    brand:"",
+    sizes:"",
+    colour:"",
+    stock:"",
+    image:"",
+  });
+
+  await fetchproduct();
+
+}catch(error){
+  console.error("Add product error:",error);
+  setMessage(error.message || "Something went wrong");
+
+} finally {
+  setLoading(false);
+}
+
   };
 
 
@@ -311,7 +422,9 @@ const Adminpage = () => {
               className="bg-green-500 hover:bg-green-600 text-white font-bold px-8 py-3 rounded-lg">
               <Plus size={24} />
 
-              Add Product</button>
+              {loading ? "Saving....": "Add Product"} </button>
+
+              
           </div>
           <div className="bg-white rounded-lg shadow-md p-6">
 
@@ -319,7 +432,7 @@ const Adminpage = () => {
               Manage Products
             </h2>
 
-            {products.map((product) => (
+            {product.map((product) => (
 
               <div
                 key={product.id}
@@ -349,14 +462,14 @@ const Adminpage = () => {
                 <div className="flex gap-2">
 
         
-                  <button
+                  <button type="button"
                     className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg"
                   >
                     Update
                   </button>
 
                   
-                  <button
+                  <button type ="button"
                     className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg"
                   >
                     Delete
